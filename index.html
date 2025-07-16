@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Search and explore 1,727 federal grant opportunities. Find funding for your projects, research, and initiatives.">
+    <meta name="keywords" content="federal grants, government funding, research grants, nonprofit grants, grant database">
+    <meta name="author" content="Federal Grants Database">
+    
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Federal Grants Database - 1,727 Grant Opportunities">
+    <meta property="og:description" content="Search and explore federal grant opportunities. Find funding for your projects, research, and initiatives.">
+    <meta property="og:url" content="https://shilohtd.github.io/Fundingdatabase/">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Federal Grants Database">
+    <meta name="twitter:description" content="Search 1,727 federal grant opportunities">
+    
+    <title>Federal Grants Database - 1,727 Opportunities</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E💰%3C/text%3E%3C/svg%3E">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="grants_data.json" as="fetch" type="application/json" crossorigin>
+    <link rel="preload" href="app.js" as="script">
+</head>
+<body>
+    <div class="grants-db">
+        <!-- Loading State -->
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Loading grants database...</p>
+            <small>Loading 1,727 grant opportunities...</small>
+        </div>
+        
+        <!-- Error State -->
+        <div id="error" class="error" style="display:none;">
+            <h2>Unable to Load Database</h2>
+            <p>There was an error loading the grants data. Please refresh the page or try again later.</p>
+            <button onclick="location.reload()" class="retry-btn">Retry</button>
+        </div>
+        
+        <!-- Main Application -->
+        <div id="main-content" style="display:none;">
+            <header class="header">
+                <h1 class="title">Federal Grants Database</h1>
+                <p class="subtitle">Search and explore <span id="total-count">1,727</span> federal grant opportunities</p>
+                <p class="description">Find funding for research, projects, nonprofits, and initiatives across all federal agencies.</p>
+            </header>
+            
+            <main class="main-content">
+                <!-- Search and Filter Controls -->
+                <section class="controls" aria-label="Search and filter controls">
+                    <div class="search-group">
+                        <label for="searchInput" class="visually-hidden">Search grants</label>
+                        <input 
+                            type="text" 
+                            id="searchInput" 
+                            class="search-input" 
+                            placeholder="Search grants by title, agency, or keywords..."
+                            aria-describedby="search-help"
+                        >
+                        <small id="search-help" class="help-text">Search across all grant fields including title, agency, and description</small>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="categoryFilter">Category:</label>
+                        <select id="categoryFilter" class="filter-select">
+                            <option value="">All Categories</option>
+                        </select>
+                        
+                        <label for="statusFilter">Status:</label>
+                        <select id="statusFilter" class="filter-select">
+                            <option value="">All Statuses</option>
+                        </select>
+                        
+                        <label for="agencyFilter">Agency:</label>
+                        <select id="agencyFilter" class="filter-select">
+                            <option value="">All Agencies</option>
+                        </select>
+                    </div>
+                    
+                    <div class="action-group">
+                        <button id="downloadBtn" class="download-btn" title="Download filtered results as CSV">
+                            📥 Download CSV
+                        </button>
+                        <button id="clearFiltersBtn" class="clear-btn" title="Clear all filters">
+                            🔄 Clear Filters
+                        </button>
+                    </div>
+                </section>
+                
+                <!-- Statistics -->
+                <section class="stats" id="stats" aria-live="polite">
+                    Loading statistics...
+                </section>
+                
+                <!-- Results Table -->
+                <section class="table-section">
+                    <div class="table-container">
+                        <div class="table-wrapper" role="region" aria-label="Grants table" tabindex="0">
+                            <table class="grants-table" role="table">
+                                <thead>
+                                    <tr role="row">
+                                        <th role="columnheader" data-sort="OPPORTUNITY NUMBER" tabindex="0">
+                                            Grant ID
+                                            <span class="sort-indicator" aria-hidden="true"></span>
+                                        </th>
+                                        <th role="columnheader" data-sort="OPPORTUNITY TITLE" tabindex="0">
+                                            Title
+                                            <span class="sort-indicator" aria-hidden="true"></span>
+                                        </th>
+                                        <th role="columnheader" data-sort="AGENCY NAME" tabindex="0">
+                                            Agency
+                                            <span class="sort-indicator" aria-hidden="true"></span>
+                                        </th>
+                                        <th role="columnheader" data-sort="CATEGORY OF FUNDING ACTIVITY" tabindex="0">
+                                            Category
+                                            <span class="sort-indicator" aria-hidden="true"></span>
+                                        </th>
+                                        <th role="columnheader" data-sort="ESTIMATED TOTAL FUNDING" tabindex="0">
+                                            Total Funding
+                                            <span class="sort-indicator" aria-hidden="true"></span>
+                                        </th>
+                                        <th role="columnheader" data-sort="AWARD CEILING" tabindex="0">
+                                            Max Award
+                                            <span class="sort-indicator" aria-hidden="true"></span>
+                                        </th>
+                                        <th role="columnheader" data-sort="CLOSE DATE" tabindex="0">
+                                            Deadline
+                                            <span class="sort-indicator" aria-hidden="true"></span>
+                                        </th>
+                                        <th role="columnheader" data-sort="OPPORTUNITY STATUS" tabindex="0">
+                                            Status
+                                            <span class="sort-indicator" aria-hidden="true"></span>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tableBody" role="rowgroup">
+                                    <!-- Table rows will be generated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Pagination -->
+                <nav class="pagination" aria-label="Table pagination">
+                    <div class="pagination-info" id="paginationInfo"></div>
+                    <div class="pagination-controls" id="paginationControls"></div>
+                </nav>
+            </main>
+            
+            <footer class="footer">
+                <p>
+                    Database generated on July 16, 2025 • 
+                    <a href="https://github.com/Shilohtd/Fundingdatabase" target="_blank" rel="noopener">
+                        View on GitHub
+                    </a> • 
+                    <a href="https://www.grants.gov" target="_blank" rel="noopener">
+                        Data from Grants.gov
+                    </a>
+                </p>
+                <p class="disclaimer">
+                    <small>
+                        This database is for informational purposes only. 
+                        Please verify all grant details on the official government website before applying.
+                    </small>
+                </p>
+            </footer>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="app.js"></script>
+    
+    <!-- Analytics (uncomment and add your tracking ID) -->
+    <!-- 
+    <script async src="https://www.googletagmanager.com/gtag/js?id=GA_TRACKING_ID"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'GA_TRACKING_ID');
+    </script>
+    -->
+</body>
+</html>

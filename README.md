@@ -1,13 +1,20 @@
-# Federal Grants Database
+# Protected Federal Grants Database
 
-A professional, searchable database of federal grant opportunities optimized for GitHub Pages.
+A professional, searchable database of federal grant opportunities with **Netlify Identity authentication** - optimized for GitHub Pages.
 
-## 🚀 Features
+## 🔐 Security Features
+
+- **Netlify Identity Authentication**: Secure login/signup system
+- **Protected Content**: Database only accessible after authentication
+- **User Management**: Easy user administration through Netlify dashboard
+- **Session Management**: Automatic login/logout handling
+
+## 🚀 Database Features
 
 - **Fast Search**: Real-time search across all grant fields
 - **Advanced Filtering**: Filter by category, status, and agency
 - **Responsive Design**: Works perfectly on all devices
-- **Professional UI**: Clean, modern interface
+- **Professional UI**: Clean, modern interface with authentication
 - **Keyboard Navigation**: Fully accessible with keyboard
 - **CSV Export**: Download filtered results
 - **SEO Optimized**: Meta tags and structured data
@@ -40,25 +47,56 @@ python github_grants_generator.py
 ### 3. Upload Files
 
 Copy these generated files to your repository:
-- `index.html`
-- `styles.css`
-- `app.js`
+- `index.html` (with authentication)
+- `styles.css` (with login styling)
+- `app.js` (with Netlify Identity integration)
 - `grants_data.json`
 - `README.md`
 
-### 4. Enable GitHub Pages
+### 4. Deploy to Netlify
 
-1. Go to your repository settings
-2. Scroll to "Pages" section
-3. Select source: "Deploy from a branch"
-4. Choose branch: `main` (or `master`)
-5. Choose folder: `/ (root)`
-6. Click "Save"
+**Option A: Connect GitHub to Netlify**
+1. Go to [netlify.com](https://netlify.com) and sign up/log in
+2. Click "New site from Git"
+3. Choose GitHub and select your repository
+4. Deploy settings: Build command: (leave empty), Publish directory: (leave empty)
+5. Click "Deploy site"
 
-### 5. Access Your Database
+**Option B: Manual Upload**
+1. Drag and drop your files to Netlify's deploy area
+
+### 5. Enable Netlify Identity 🔑
+
+**CRITICAL STEP - This enables authentication:**
+
+1. In your Netlify dashboard, go to your site
+2. Click **"Site settings"** → **"Identity"**
+3. Click **"Enable Identity"**
+4. Configure these settings:
+   - **Registration**: Set to "Invite only" or "Open" (your choice)
+   - **External providers**: Enable Google, GitHub, etc. if desired
+   - **Email templates**: Customize welcome/confirmation emails if needed
+
+### 6. Access Your Protected Database
 
 Your database will be available at:
-`https://shilohtd.github.io/Fundingdatabase/`
+`https://[your-site-name].netlify.app/`
+
+**Note**: Users will see a login screen first, then access the grants database after authentication.
+
+## 👥 User Management
+
+### Adding Users (If set to "Invite Only"):
+1. Go to Netlify dashboard → Your site → Identity → Users
+2. Click "Invite users"
+3. Enter email addresses
+4. Users will receive invitation emails
+
+### Managing Users:
+- View all registered users in the Identity tab
+- Delete users if needed
+- Monitor login activity
+- Assign roles (if you implement role-based access)
 
 ## 🎯 Customization
 
@@ -68,15 +106,24 @@ To update the grants data:
 1. Replace `Grants.csv` with new data
 2. Run the Python script again
 3. Upload the new `grants_data.json`
-4. Commit and push changes
+4. Redeploy to Netlify
 
 ### Styling
 
 Modify `styles.css` to customize:
 - Colors (CSS custom properties at top)
+- Login screen appearance
 - Layout and spacing
 - Typography
 - Mobile responsiveness
+
+### Authentication Settings
+
+In Netlify Identity settings:
+- **Registration**: Open vs Invite-only
+- **External providers**: Google, GitHub, etc.
+- **Email templates**: Customize messaging
+- **Site URL**: Set for email links
 
 ### Features
 
@@ -85,6 +132,7 @@ Modify `app.js` to add:
 - Different sorting options
 - Export formats
 - Analytics tracking
+- Role-based permissions
 
 ## 📱 Browser Support
 
@@ -107,15 +155,20 @@ Modify `app.js` to add:
 To add Google Analytics:
 1. Uncomment the Analytics section in `index.html`
 2. Replace `GA_TRACKING_ID` with your tracking ID
-3. Redeploy to GitHub Pages
+3. Redeploy to Netlify
 
 ## 🚧 Troubleshooting
+
+### Authentication Issues
+- **Login screen not appearing**: Check Netlify Identity is enabled
+- **Can't create accounts**: Check registration settings in Netlify Identity
+- **Email not working**: Verify domain settings in Netlify
 
 ### Large File Issues
 If `grants_data.json` is too large (>100MB):
 1. Split data into multiple files
 2. Use pagination to load data chunks
-3. Consider using GitHub LFS for large files
+3. Consider using Netlify Large Media
 
 ### Performance Issues
 If the site loads slowly:
@@ -123,10 +176,12 @@ If the site loads slowly:
 2. Implement virtual scrolling
 3. Add search result limits
 
-### CORS Issues
-If loading locally:
-1. Use a local server (e.g., `python -m http.server`)
-2. Don't open `index.html` directly in browser
+## 🔐 Security Notes
+
+- **Data Protection**: Only authenticated users can access the grants database
+- **HTTPS**: Netlify provides automatic HTTPS
+- **User Data**: Netlify Identity handles secure user storage
+- **No Backend Required**: All authentication handled by Netlify's infrastructure
 
 ## 📄 License
 
@@ -144,10 +199,11 @@ This project is open source and available under the [MIT License](LICENSE).
 For questions or issues:
 1. Check the [Issues](https://github.com/Shilohtd/Fundingdatabase/issues) page
 2. Create a new issue if needed
-3. Provide detailed information about the problem
+3. For Netlify Identity issues, check [Netlify's documentation](https://docs.netlify.com/visitor-access/identity/)
 
 ---
 
 **Data Source**: [Grants.gov](https://www.grants.gov)  
+**Authentication**: [Netlify Identity](https://docs.netlify.com/visitor-access/identity/)  
 **Generated**: [Date will be auto-populated]  
-**Version**: 1.0.0
+**Version**: 2.0.0 (With Authentication)

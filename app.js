@@ -1,6 +1,7 @@
 /**
- * Federal Grants Database - GitHub Pages Optimized
+ * Federal Grants Database - GitHub Pages Optimized WITH AUTHENTICATION
  * Interactive database for searching and filtering federal grants
+ * Includes Netlify Identity authentication
  */
 
 class GrantsDatabase {
@@ -19,11 +20,47 @@ class GrantsDatabase {
             status: '',
             agency: ''
         };
+        this.user = null;
         
         this.init();
     }
     
     async init() {
+        // Initialize Netlify Identity first
+        this.initializeAuth();
+    }
+    
+    initializeAuth() {
+        if (window.netlifyIdentity) {
+            window.netlifyIdentity.on("init", user => {
+                if (user) {
+                    this.user = user;
+                    this.showProtectedContent(user);
+                } else {
+                    this.showLoginRequired();
+                }
+            });
+
+            window.netlifyIdentity.on("login", user => {
+                this.user = user;
+                this.showProtectedContent(user);
+            });
+
+            window.netlifyIdentity.on("logout", () => {
+                this.user = null;
+                this.showLoginRequired();
+            });
+        } else {
+            console.error('Netlify Identity not loaded');
+            this.showLoginRequired();
+        }
+    }
+    
+    async showProtectedContent(user) {
+        document.getElementById("login-required").style.display = "none";
+        document.getElementById("protected-content").style.display = "block";
+        document.getElementById("user-email").textContent = user.email;
+        
         try {
             await this.loadData();
             this.setupEventListeners();
@@ -34,6 +71,11 @@ class GrantsDatabase {
         } catch (error) {
             this.showError(error);
         }
+    }
+    
+    showLoginRequired() {
+        document.getElementById("login-required").style.display = "flex";
+        document.getElementById("protected-content").style.display = "none";
     }
     
     async loadData() {

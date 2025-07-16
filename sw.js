@@ -1,7 +1,7 @@
-// Service Worker for Federal Grants Database
+// Service Worker for Protected Federal Grants Database
 // Provides offline capability and caching
 
-const CACHE_NAME = 'grants-db-v1';
+const CACHE_NAME = 'grants-db-auth-v1';
 const urlsToCache = [
     './',
     './index.html',
@@ -22,6 +22,11 @@ self.addEventListener('install', (event) => {
 
 // Fetch event - serve from cache when offline
 self.addEventListener('fetch', (event) => {
+    // Don't cache Netlify Identity requests
+    if (event.request.url.includes('identity.netlify.com')) {
+        return;
+    }
+    
     event.respondWith(
         caches.match(event.request)
             .then((response) => {

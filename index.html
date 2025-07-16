@@ -23,6 +23,9 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E💰%3C/text%3E%3C/svg%3E">
     
+    <!-- Netlify Identity Widget -->
+    <script type="text/javascript" src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+    
     <!-- Stylesheets -->
     <link rel="stylesheet" href="styles.css">
     
@@ -31,7 +34,53 @@
     <link rel="preload" href="app.js" as="script">
 </head>
 <body>
-    <div class="grants-db">
+    <!-- Login Required Screen -->
+    <div id="login-required" class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <h1>🏛️ Federal Grants Database</h1>
+                <p class="login-subtitle">Access to 1,727+ federal grant opportunities</p>
+                <p class="login-description">Comprehensive database of federal funding opportunities across all agencies</p>
+            </div>
+            
+            <div class="login-content">
+                <div class="auth-requirement">
+                    <div class="lock-icon">🔒</div>
+                    <h2>Authentication Required</h2>
+                    <p>Please log in to access the grants database. This ensures secure access to our comprehensive funding information.</p>
+                </div>
+                
+                <div class="login-actions">
+                    <button class="login-btn primary" onclick="netlifyIdentity.open('login')">
+                        <span class="btn-icon">🔑</span>
+                        Log In
+                    </button>
+                    <button class="login-btn secondary" onclick="netlifyIdentity.open('signup')">
+                        <span class="btn-icon">👤</span>
+                        Sign Up
+                    </button>
+                </div>
+                
+                <div class="login-features">
+                    <h3>What you'll get access to:</h3>
+                    <ul>
+                        <li>🔍 Advanced search across all 1,727 grants</li>
+                        <li>📊 Filter by agency, category, and status</li>
+                        <li>💰 View funding amounts and deadlines</li>
+                        <li>📥 Export search results to CSV</li>
+                        <li>📱 Mobile-optimized interface</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="login-footer">
+                <small>Secure access powered by Netlify Identity</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Protected Content -->
+    <div id="protected-content" class="grants-db" style="display: none;">
         <!-- Loading State -->
         <div id="loading" class="loading">
             <div class="spinner"></div>
@@ -49,9 +98,22 @@
         <!-- Main Application -->
         <div id="main-content" style="display:none;">
             <header class="header">
-                <h1 class="title">Federal Grants Database</h1>
-                <p class="subtitle">Search and explore <span id="total-count">1,727</span> federal grant opportunities</p>
-                <p class="description">Find funding for research, projects, nonprofits, and initiatives across all federal agencies.</p>
+                <div class="header-content">
+                    <div class="header-left">
+                        <h1 class="title">🏛️ Federal Grants Database</h1>
+                        <p class="subtitle">Search and explore <span id="total-count">1,727</span> federal grant opportunities</p>
+                        <p class="description">Find funding for research, projects, nonprofits, and initiatives across all federal agencies.</p>
+                    </div>
+                    <div class="header-right">
+                        <div class="user-info">
+                            <span class="user-greeting">Welcome, <span id="user-email" class="user-email"></span></span>
+                            <button class="logout-btn" onclick="netlifyIdentity.logout()" title="Logout">
+                                <span class="btn-icon">🚪</span>
+                                Logout
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </header>
             
             <main class="main-content">

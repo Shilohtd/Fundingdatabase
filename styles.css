@@ -1,4 +1,4 @@
-/* Federal Grants Database Styles - NVCA Branding */
+/* Federal Grants Database Styles - NVCA Branding with Auth */
 
 :root {
     --primary-color: #2D2D2D;
@@ -33,6 +33,176 @@ body {
     padding: 16px;
 }
 
+/* Authentication Styles */
+.login-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.login-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--surface-accent);
+    padding: 40px;
+    max-width: 500px;
+    width: 100%;
+    text-align: center;
+    margin-top: 20px;
+}
+
+.login-content h2 {
+    color: var(--accent-secondary);
+    margin-bottom: 16px;
+    font-size: 24px;
+}
+
+.login-content p {
+    color: var(--secondary-color);
+    margin-bottom: 32px;
+    line-height: 1.6;
+}
+
+.login-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.auth-btn {
+    padding: 14px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.auth-btn.primary {
+    background: linear-gradient(135deg, #5CB5B5 0%, #374C6C 100%);
+    color: white;
+}
+
+.auth-btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(92, 181, 181, 0.3);
+}
+
+.auth-btn.secondary {
+    background: transparent;
+    color: var(--accent-secondary);
+    border: 2px solid var(--surface-accent);
+}
+
+.auth-btn.secondary:hover {
+    background: var(--surface-accent);
+    border-color: var(--accent-color);
+}
+
+.auth-btn.logout {
+    padding: 6px 12px;
+    font-size: 12px;
+    background: var(--danger-color);
+    color: white;
+}
+
+.auth-btn.logout:hover {
+    background: #8b1e2b;
+}
+
+.login-help {
+    border-top: 1px solid var(--surface-accent);
+    padding-top: 20px;
+    color: var(--secondary-color);
+}
+
+/* User Info Styles */
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.header-text {
+    flex: 1;
+}
+
+.header-auth {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.user-info {
+    text-align: right;
+    color: white;
+}
+
+.user-greeting {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.user-email {
+    display: block;
+    font-size: 11px;
+    opacity: 0.8;
+}
+
+/* Message Styles */
+.auth-message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 16px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    max-width: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.auth-message-success {
+    background: #d1fae5;
+    border: 1px solid #a7f3d0;
+    color: #065f46;
+}
+
+.auth-message-error {
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+}
+
+.message-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    margin-left: 12px;
+    opacity: 0.7;
+}
+
+.message-close:hover {
+    opacity: 1;
+}
+
+/* Existing Styles */
 .header {
     text-align: center;
     margin-bottom: 32px;
@@ -312,8 +482,48 @@ body {
     text-decoration: none;
 }
 
+/* Responsive Design */
 @media (max-width: 768px) {
-    .filter-group { flex-direction: column; align-items: stretch; }
-    .grants-table th, .grants-table td { padding: 4px; }
-    .pagination { flex-direction: column; }
+    .header-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .header-auth {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .user-info {
+        text-align: center;
+    }
+    
+    .filter-group { 
+        flex-direction: column; 
+        align-items: stretch; 
+    }
+    
+    .grants-table th, .grants-table td { 
+        padding: 4px; 
+    }
+    
+    .pagination { 
+        flex-direction: column; 
+    }
+    
+    .login-card {
+        padding: 24px;
+        margin: 16px;
+    }
+    
+    .login-actions {
+        gap: 8px;
+    }
+    
+    .auth-message {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
 }

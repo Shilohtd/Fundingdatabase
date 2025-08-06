@@ -1,3 +1,8 @@
+/**
+ * Federal Grants Database - NVCA with Netlify Identity
+ * Authentication-protected database functionality
+ */
+
 class GrantsDatabase {
     constructor() {
         this.grants = [];
@@ -6,10 +11,38 @@ class GrantsDatabase {
         this.pageSize = 20;
         this.sortConfig = { key: null, direction: 'asc' };
         this.filters = { search: '', category: '', status: '', agency: '' };
-        this.init();
+        this.isInitialized = false;
+        
+        // Wait for authentication before initializing
+        this.waitForAuth();
+    }
+    
+    waitForAuth() {
+        // Check if user is authenticated every 100ms
+        const checkAuth = () => {
+            if (window.authManager && window.authManager.isUserAuthenticated()) {
+                this.init();
+            } else if (window.authManager && !window.authManager.isUserAuthenticated()) {
+                // User is not authenticated, don't load data
+                console.log('User not authenticated, database not loaded');
+            } else {
+                // Auth manager not ready yet, keep waiting
+                setTimeout(checkAuth, 100);
+            }
+        };
+        checkAuth();
     }
     
     async init() {
+        // Don't initialize twice
+        if (this.isInitialized) return;
+        
+        // Ensure user is authenticated
+        if (!window.authManager || !window.authManager.isUserAuthenticated()) {
+            console.log('Authentication required to access database');
+            return;
+        }
+        
         try {
             await this.loadData();
             this.setupEventListeners();
@@ -17,16 +50,28 @@ class GrantsDatabase {
             this.applyFilters();
             this.render();
             this.showMainContent();
+            this.isInitialized = true;
+            console.log('Grants database initialized successfully');
         } catch (error) {
             this.showError(error);
         }
     }
     
     async loadData() {
+        // Double-check authentication before loading sensitive data
+        if (!window.authManager || !window.authManager.isUserAuthenticated()) {
+            throw new Error('Authentication required to load grants data');
+        }
+        
         const response = await fetch('./grants_data.json');
-        if (!response.ok) throw new Error(`Failed to load data: ${response.status}`);
+        if (!response.ok) {
+            throw new Error(`Failed to load data: ${response.status} ${response.statusText}`);
+        }
         this.grants = await response.json();
         
+        console.log(`Loaded ${this.grants.length} grants for authenticated user`);
+        
+        // Update total count in header
         const totalCountElement = document.getElementById('total-count');
         if (totalCountElement) {
             totalCountElement.textContent = this.grants.length.toLocaleString();
@@ -35,24 +80,32 @@ class GrantsDatabase {
     
     setupEventListeners() {
         const searchInput = document.getElementById('searchInput');
-        searchInput.addEventListener('input', this.debounce((e) => {
-            this.filters.search = e.target.value;
-            this.currentPage = 1;
-            this.applyFilters();
-            this.render();
-        }, 300));
-        
-        ['categoryFilter', 'statusFilter', 'agencyFilter'].forEach(id => {
-            document.getElementById(id).addEventListener('change', (e) => {
-                this.filters[id.replace('Filter', '')] = e.target.value;
+        if (searchInput) {
+            searchInput.addEventListener('input', this.debounce((e) => {
+                this.filters.search = e.target.value;
                 this.currentPage = 1;
                 this.applyFilters();
                 this.render();
-            });
+            }, 300));
+        }
+        
+        ['categoryFilter', 'statusFilter', 'agencyFilter'].forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener('change', (e) => {
+                    this.filters[id.replace('Filter', '')] = e.target.value;
+                    this.currentPage = 1;
+                    this.applyFilters();
+                    this.render();
+                });
+            }
         });
         
-        document.getElementById('downloadBtn').addEventListener('click', () => this.downloadCSV());
-        document.getElementById('clearFiltersBtn').addEventListener('click', () => this.clearFilters());
+        const downloadBtn = document.getElementById('downloadBtn');
+        const clearBtn = document.getElementById('clearFiltersBtn');
+        
+        if (downloadBtn) downloadBtn.addEventListener('click', () => this.downloadCSV());
+        if (clearBtn) clearBtn.addEventListener('click', () => this.clearFilters());
         
         document.querySelectorAll('th[data-sort]').forEach(th => {
             th.addEventListener('click', () => this.handleSort(th.getAttribute('data-sort')));
@@ -69,6 +122,8 @@ class GrantsDatabase {
     
     populateSelect(selectId, options) {
         const select = document.getElementById(selectId);
+        if (!select) return;
+        
         while (select.children.length > 1) select.removeChild(select.lastChild);
         
         options.forEach(option => {
@@ -155,7 +210,15 @@ class GrantsDatabase {
             statsText += ` • Total Funding: ${this.formatCurrency(totalFunding)}`;
         }
         
-        document.getElementById('stats').textContent = statsText;
+        const user = window.authManager?.getCurrentUser();
+        if (user) {
+            statsText += ` • Member: ${user.user_metadata?.full_name || user.email}`;
+        }
+        
+        const statsElement = document.getElementById('stats');
+        if (statsElement) {
+            statsElement.textContent = statsText;
+        }
     }
     
     render() {
@@ -169,6 +232,8 @@ class GrantsDatabase {
         const pageGrants = this.filteredGrants.slice(start, end);
         
         const tbody = document.getElementById('tableBody');
+        if (!tbody) return;
+        
         tbody.innerHTML = pageGrants.map(grant => `
             <tr role="row">
                 <td>${grant['LINK TO ADDITIONAL INFORMATION'] 
@@ -191,17 +256,21 @@ class GrantsDatabase {
         const start = (this.currentPage - 1) * this.pageSize + 1;
         const end = Math.min(this.currentPage * this.pageSize, this.filteredGrants.length);
         
-        document.getElementById('paginationInfo').textContent = 
-            `Page ${this.currentPage} of ${totalPages} • ${start}-${end} of ${this.filteredGrants.length}`;
+        const paginationInfo = document.getElementById('paginationInfo');
+        if (paginationInfo) {
+            paginationInfo.textContent = `Page ${this.currentPage} of ${totalPages} • ${start}-${end} of ${this.filteredGrants.length}`;
+        }
         
         const controls = document.getElementById('paginationControls');
-        controls.innerHTML = `
-            <button class="pagination-btn" ${this.currentPage === 1 ? 'disabled' : ''} 
-                    onclick="window.grantsDB.goToPage(${this.currentPage - 1})">‹</button>
-            ${this.generatePageButtons(totalPages)}
-            <button class="pagination-btn" ${this.currentPage === totalPages || totalPages === 0 ? 'disabled' : ''} 
-                    onclick="window.grantsDB.goToPage(${this.currentPage + 1})">›</button>
-        `;
+        if (controls) {
+            controls.innerHTML = `
+                <button class="pagination-btn" ${this.currentPage === 1 ? 'disabled' : ''} 
+                        onclick="window.grantsDB.goToPage(${this.currentPage - 1})">‹</button>
+                ${this.generatePageButtons(totalPages)}
+                <button class="pagination-btn" ${this.currentPage === totalPages || totalPages === 0 ? 'disabled' : ''} 
+                        onclick="window.grantsDB.goToPage(${this.currentPage + 1})">›</button>
+            `;
+        }
     }
     
     generatePageButtons(totalPages) {
@@ -222,16 +291,23 @@ class GrantsDatabase {
         if (page >= 1 && page <= totalPages) {
             this.currentPage = page;
             this.render();
-            document.querySelector('.table-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            
+            const tableContainer = document.querySelector('.table-container');
+            if (tableContainer) {
+                tableContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
     }
     
     clearFilters() {
         this.filters = { search: '', category: '', status: '', agency: '' };
         
-        document.getElementById('searchInput').value = '';
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) searchInput.value = '';
+        
         ['categoryFilter', 'statusFilter', 'agencyFilter'].forEach(id => {
-            document.getElementById(id).value = '';
+            const element = document.getElementById(id);
+            if (element) element.value = '';
         });
         
         this.currentPage = 1;
@@ -245,6 +321,11 @@ class GrantsDatabase {
     }
     
     downloadCSV() {
+        if (!window.authManager || !window.authManager.isUserAuthenticated()) {
+            alert('Please log in to download data.');
+            return;
+        }
+        
         if (this.filteredGrants.length === 0) {
             alert('No data to download. Please adjust your filters.');
             return;
@@ -266,14 +347,24 @@ class GrantsDatabase {
         const link = document.createElement('a');
         
         const timestamp = new Date().toISOString().split('T')[0];
+        const user = window.authManager.getCurrentUser();
+        const username = user?.user_metadata?.full_name?.replace(/\s+/g, '-') || 'member';
+        
         link.href = url;
-        link.download = `federal-grants-${timestamp}.csv`;
+        link.download = `nvca-grants-${username}-${timestamp}.csv`;
         link.style.display = 'none';
         
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
+    }
+    
+    clearData() {
+        this.grants = [];
+        this.filteredGrants = [];
+        this.isInitialized = false;
+        console.log('Grants database cleared due to logout');
     }
     
     formatCurrency(amount) {
@@ -329,17 +420,24 @@ class GrantsDatabase {
     }
     
     showMainContent() {
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('main-content').style.display = 'block';
+        const loadingElement = document.getElementById('loading');
+        const mainContentElement = document.getElementById('main-content');
+        
+        if (loadingElement) loadingElement.style.display = 'none';
+        if (mainContentElement) mainContentElement.style.display = 'block';
     }
     
     showError(error) {
         console.error('Database error:', error);
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('error').style.display = 'block';
+        const loadingElement = document.getElementById('loading');
+        const errorElement = document.getElementById('error');
+        
+        if (loadingElement) loadingElement.style.display = 'none';
+        if (errorElement) errorElement.style.display = 'block';
     }
 }
 
+// Initialize the database when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     window.grantsDB = new GrantsDatabase();
 });

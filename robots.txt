@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://shilohtd.github.io/Fundingdatabase/sitemap.xml

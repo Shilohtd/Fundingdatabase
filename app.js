@@ -1,66 +1,15 @@
-/**
- * Federal Grants Database - GitHub Pages Optimized WITH AUTHENTICATION
- * Interactive database for searching and filtering federal grants
- * Includes Netlify Identity authentication
- */
-
 class GrantsDatabase {
     constructor() {
         this.grants = [];
         this.filteredGrants = [];
         this.currentPage = 1;
         this.pageSize = 20;
-        this.sortConfig = {
-            key: null,
-            direction: 'asc'
-        };
-        this.filters = {
-            search: '',
-            category: '',
-            status: '',
-            agency: ''
-        };
-        this.user = null;
-        
+        this.sortConfig = { key: null, direction: 'asc' };
+        this.filters = { search: '', category: '', status: '', agency: '' };
         this.init();
     }
     
     async init() {
-        // Initialize Netlify Identity first
-        this.initializeAuth();
-    }
-    
-    initializeAuth() {
-        if (window.netlifyIdentity) {
-            window.netlifyIdentity.on("init", user => {
-                if (user) {
-                    this.user = user;
-                    this.showProtectedContent(user);
-                } else {
-                    this.showLoginRequired();
-                }
-            });
-
-            window.netlifyIdentity.on("login", user => {
-                this.user = user;
-                this.showProtectedContent(user);
-            });
-
-            window.netlifyIdentity.on("logout", () => {
-                this.user = null;
-                this.showLoginRequired();
-            });
-        } else {
-            console.error('Netlify Identity not loaded');
-            this.showLoginRequired();
-        }
-    }
-    
-    async showProtectedContent(user) {
-        document.getElementById("login-required").style.display = "none";
-        document.getElementById("protected-content").style.display = "block";
-        document.getElementById("user-email").textContent = user.email;
-        
         try {
             await this.loadData();
             this.setupEventListeners();
@@ -73,19 +22,11 @@ class GrantsDatabase {
         }
     }
     
-    showLoginRequired() {
-        document.getElementById("login-required").style.display = "flex";
-        document.getElementById("protected-content").style.display = "none";
-    }
-    
     async loadData() {
         const response = await fetch('./grants_data.json');
-        if (!response.ok) {
-            throw new Error(`Failed to load data: ${response.status} ${response.statusText}`);
-        }
+        if (!response.ok) throw new Error(`Failed to load data: ${response.status}`);
         this.grants = await response.json();
         
-        // Update total count in header
         const totalCountElement = document.getElementById('total-count');
         if (totalCountElement) {
             totalCountElement.textContent = this.grants.length.toLocaleString();
@@ -93,7 +34,6 @@ class GrantsDatabase {
     }
     
     setupEventListeners() {
-        // Search input
         const searchInput = document.getElementById('searchInput');
         searchInput.addEventListener('input', this.debounce((e) => {
             this.filters.search = e.target.value;
@@ -102,82 +42,34 @@ class GrantsDatabase {
             this.render();
         }, 300));
         
-        // Filter selects
-        document.getElementById('categoryFilter').addEventListener('change', (e) => {
-            this.filters.category = e.target.value;
-            this.currentPage = 1;
-            this.applyFilters();
-            this.render();
-        });
-        
-        document.getElementById('statusFilter').addEventListener('change', (e) => {
-            this.filters.status = e.target.value;
-            this.currentPage = 1;
-            this.applyFilters();
-            this.render();
-        });
-        
-        document.getElementById('agencyFilter').addEventListener('change', (e) => {
-            this.filters.agency = e.target.value;
-            this.currentPage = 1;
-            this.applyFilters();
-            this.render();
-        });
-        
-        // Action buttons
-        document.getElementById('downloadBtn').addEventListener('click', () => this.downloadCSV());
-        document.getElementById('clearFiltersBtn').addEventListener('click', () => this.clearFilters());
-        
-        // Sort headers
-        document.querySelectorAll('th[data-sort]').forEach(th => {
-            th.addEventListener('click', () => this.handleSort(th.getAttribute('data-sort')));
-            th.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    this.handleSort(th.getAttribute('data-sort'));
-                }
+        ['categoryFilter', 'statusFilter', 'agencyFilter'].forEach(id => {
+            document.getElementById(id).addEventListener('change', (e) => {
+                this.filters[id.replace('Filter', '')] = e.target.value;
+                this.currentPage = 1;
+                this.applyFilters();
+                this.render();
             });
         });
         
-        // Keyboard navigation for table
-        const tableWrapper = document.querySelector('.table-wrapper');
-        tableWrapper.addEventListener('keydown', (e) => {
-            if (e.key === 'Tab') {
-                // Allow normal tab navigation
-                return;
-            }
+        document.getElementById('downloadBtn').addEventListener('click', () => this.downloadCSV());
+        document.getElementById('clearFiltersBtn').addEventListener('click', () => this.clearFilters());
+        
+        document.querySelectorAll('th[data-sort]').forEach(th => {
+            th.addEventListener('click', () => this.handleSort(th.getAttribute('data-sort')));
         });
     }
     
     populateFilters() {
-        const categories = [...new Set(this.grants
-            .map(g => g['CATEGORY OF FUNDING ACTIVITY'])
-            .filter(Boolean)
-            .sort())];
+        const getUniqueValues = (field) => [...new Set(this.grants.map(g => g[field]).filter(Boolean).sort())];
         
-        const statuses = [...new Set(this.grants
-            .map(g => g['OPPORTUNITY STATUS'])
-            .filter(Boolean)
-            .sort())];
-        
-        const agencies = [...new Set(this.grants
-            .map(g => g['AGENCY NAME'])
-            .filter(Boolean)
-            .sort())];
-        
-        this.populateSelect('categoryFilter', categories);
-        this.populateSelect('statusFilter', statuses);
-        this.populateSelect('agencyFilter', agencies);
+        this.populateSelect('categoryFilter', getUniqueValues('CATEGORY OF FUNDING ACTIVITY'));
+        this.populateSelect('statusFilter', getUniqueValues('OPPORTUNITY STATUS'));
+        this.populateSelect('agencyFilter', getUniqueValues('AGENCY NAME'));
     }
     
     populateSelect(selectId, options) {
         const select = document.getElementById(selectId);
-        const currentValue = select.value;
-        
-        // Clear existing options except the first (default) one
-        while (select.children.length > 1) {
-            select.removeChild(select.lastChild);
-        }
+        while (select.children.length > 1) select.removeChild(select.lastChild);
         
         options.forEach(option => {
             const optionElement = document.createElement('option');
@@ -186,11 +78,6 @@ class GrantsDatabase {
             optionElement.title = option;
             select.appendChild(optionElement);
         });
-        
-        // Restore previous value if it still exists
-        if (currentValue && options.includes(currentValue)) {
-            select.value = currentValue;
-        }
     }
     
     applyFilters() {
@@ -200,16 +87,10 @@ class GrantsDatabase {
                     value && value.toString().toLowerCase().includes(this.filters.search.toLowerCase())
                 );
             
-            const matchesCategory = !this.filters.category || 
-                grant['CATEGORY OF FUNDING ACTIVITY'] === this.filters.category;
-            
-            const matchesStatus = !this.filters.status || 
-                grant['OPPORTUNITY STATUS'] === this.filters.status;
-            
-            const matchesAgency = !this.filters.agency || 
-                grant['AGENCY NAME'] === this.filters.agency;
-            
-            return matchesSearch && matchesCategory && matchesStatus && matchesAgency;
+            return matchesSearch &&
+                   (!this.filters.category || grant['CATEGORY OF FUNDING ACTIVITY'] === this.filters.category) &&
+                   (!this.filters.status || grant['OPPORTUNITY STATUS'] === this.filters.status) &&
+                   (!this.filters.agency || grant['AGENCY NAME'] === this.filters.agency);
         });
         
         this.applySorting();
@@ -223,16 +104,13 @@ class GrantsDatabase {
             const aValue = a[this.sortConfig.key];
             const bValue = b[this.sortConfig.key];
             
-            // Handle null/undefined values
             if (aValue === null || aValue === undefined) return 1;
             if (bValue === null || bValue === undefined) return -1;
             
-            // Handle numeric values
             if (typeof aValue === 'number' && typeof bValue === 'number') {
                 return this.sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
             }
             
-            // Handle string values
             const aString = aValue.toString().toLowerCase();
             const bString = bValue.toString().toLowerCase();
             
@@ -250,7 +128,6 @@ class GrantsDatabase {
             this.sortConfig.direction = 'asc';
         }
         
-        // Update sort indicators
         document.querySelectorAll('th[data-sort]').forEach(th => {
             th.removeAttribute('data-sort-direction');
         });
@@ -273,19 +150,9 @@ class GrantsDatabase {
             return sum + (typeof funding === 'number' ? funding : 0);
         }, 0);
         
-        const avgAward = this.filteredGrants.reduce((sum, grant) => {
-            const award = grant['AWARD CEILING'];
-            return sum + (typeof award === 'number' ? award : 0);
-        }, 0);
-        
         let statsText = `Showing ${showing.toLocaleString()} of ${total.toLocaleString()} grants`;
-        
         if (totalFunding > 0) {
             statsText += ` • Total Funding: ${this.formatCurrency(totalFunding)}`;
-        }
-        
-        if (avgAward > 0 && this.filteredGrants.length > 0) {
-            statsText += ` • Avg Max Award: ${this.formatCurrency(avgAward / this.filteredGrants.length)}`;
         }
         
         document.getElementById('stats').textContent = statsText;
@@ -304,41 +171,17 @@ class GrantsDatabase {
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = pageGrants.map(grant => `
             <tr role="row">
-                <td role="cell">
-                    ${grant['LINK TO ADDITIONAL INFORMATION'] 
-                        ? `<a href="${grant['LINK TO ADDITIONAL INFORMATION']}" target="_blank" rel="noopener" class="grant-id" title="View grant details">${this.escapeHtml(grant['OPPORTUNITY NUMBER'])}</a>`
-                        : `<span class="grant-id">${this.escapeHtml(grant['OPPORTUNITY NUMBER'])}</span>`
-                    }
-                </td>
-                <td role="cell">
-                    <div class="grant-title" title="${this.escapeHtml(grant['OPPORTUNITY TITLE'])}">
-                        ${this.escapeHtml(grant['OPPORTUNITY TITLE'])}
-                    </div>
-                </td>
-                <td role="cell">
-                    <div class="agency-name" title="${this.escapeHtml(grant['AGENCY NAME'])}">
-                        ${this.escapeHtml(grant['AGENCY NAME'])}
-                    </div>
-                </td>
-                <td role="cell">
-                    <span class="category-badge" title="${this.escapeHtml(grant['CATEGORY OF FUNDING ACTIVITY'])}">
-                        ${this.escapeHtml(this.truncateText(grant['CATEGORY OF FUNDING ACTIVITY'], 20))}
-                    </span>
-                </td>
-                <td role="cell" class="currency">
-                    ${this.formatCurrency(grant['ESTIMATED TOTAL FUNDING'])}
-                </td>
-                <td role="cell" class="currency">
-                    ${this.formatCurrency(grant['AWARD CEILING'])}
-                </td>
-                <td role="cell" class="date">
-                    ${this.formatDate(grant['CLOSE DATE'])}
-                </td>
-                <td role="cell">
-                    <span class="status-badge ${this.getStatusClass(grant['OPPORTUNITY STATUS'])}">
-                        ${this.escapeHtml(grant['OPPORTUNITY STATUS'])}
-                    </span>
-                </td>
+                <td>${grant['LINK TO ADDITIONAL INFORMATION'] 
+                    ? `<a href="${grant['LINK TO ADDITIONAL INFORMATION']}" target="_blank" class="grant-id">${this.escapeHtml(grant['OPPORTUNITY NUMBER'])}</a>`
+                    : `<span class="grant-id">${this.escapeHtml(grant['OPPORTUNITY NUMBER'])}</span>`
+                }</td>
+                <td><div class="grant-title" title="${this.escapeHtml(grant['OPPORTUNITY TITLE'])}">${this.escapeHtml(grant['OPPORTUNITY TITLE'])}</div></td>
+                <td><div class="agency-name" title="${this.escapeHtml(grant['AGENCY NAME'])}">${this.escapeHtml(grant['AGENCY NAME'])}</div></td>
+                <td><span class="category-badge" title="${this.escapeHtml(grant['CATEGORY OF FUNDING ACTIVITY'])}">${this.escapeHtml(this.truncateText(grant['CATEGORY OF FUNDING ACTIVITY'], 20))}</span></td>
+                <td class="currency">${this.formatCurrency(grant['ESTIMATED TOTAL FUNDING'])}</td>
+                <td class="currency">${this.formatCurrency(grant['AWARD CEILING'])}</td>
+                <td class="date">${this.formatDate(grant['CLOSE DATE'])}</td>
+                <td><span class="status-badge ${this.getStatusClass(grant['OPPORTUNITY STATUS'])}">${this.escapeHtml(grant['OPPORTUNITY STATUS'])}</span></td>
             </tr>
         `).join('');
     }
@@ -354,12 +197,10 @@ class GrantsDatabase {
         const controls = document.getElementById('paginationControls');
         controls.innerHTML = `
             <button class="pagination-btn" ${this.currentPage === 1 ? 'disabled' : ''} 
-                    onclick="window.grantsDB.goToPage(${this.currentPage - 1})" 
-                    aria-label="Previous page">‹</button>
+                    onclick="window.grantsDB.goToPage(${this.currentPage - 1})">‹</button>
             ${this.generatePageButtons(totalPages)}
             <button class="pagination-btn" ${this.currentPage === totalPages || totalPages === 0 ? 'disabled' : ''} 
-                    onclick="window.grantsDB.goToPage(${this.currentPage + 1})" 
-                    aria-label="Next page">›</button>
+                    onclick="window.grantsDB.goToPage(${this.currentPage + 1})">›</button>
         `;
     }
     
@@ -369,16 +210,8 @@ class GrantsDatabase {
         let start = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
         let end = Math.min(totalPages, start + maxVisible - 1);
         
-        if (end - start + 1 < maxVisible) {
-            start = Math.max(1, end - maxVisible + 1);
-        }
-        
         for (let i = start; i <= end; i++) {
-            buttons.push(`
-                <button class="pagination-btn ${i === this.currentPage ? 'active' : ''}" 
-                        onclick="window.grantsDB.goToPage(${i})" 
-                        aria-label="Page ${i}">${i}</button>
-            `);
+            buttons.push(`<button class="pagination-btn ${i === this.currentPage ? 'active' : ''}" onclick="window.grantsDB.goToPage(${i})">${i}</button>`);
         }
         
         return buttons.join('');
@@ -389,34 +222,19 @@ class GrantsDatabase {
         if (page >= 1 && page <= totalPages) {
             this.currentPage = page;
             this.render();
-            
-            // Scroll to top of table
-            document.querySelector('.table-container').scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'start' 
-            });
+            document.querySelector('.table-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     }
     
     clearFilters() {
-        // Reset all filters
-        this.filters = {
-            search: '',
-            category: '',
-            status: '',
-            agency: ''
-        };
+        this.filters = { search: '', category: '', status: '', agency: '' };
         
-        // Reset form inputs
         document.getElementById('searchInput').value = '';
-        document.getElementById('categoryFilter').value = '';
-        document.getElementById('statusFilter').value = '';
-        document.getElementById('agencyFilter').value = '';
+        ['categoryFilter', 'statusFilter', 'agencyFilter'].forEach(id => {
+            document.getElementById(id).value = '';
+        });
         
-        // Reset page
         this.currentPage = 1;
-        
-        // Reset sort
         this.sortConfig = { key: null, direction: 'asc' };
         document.querySelectorAll('th[data-sort]').forEach(th => {
             th.removeAttribute('data-sort-direction');
@@ -458,7 +276,6 @@ class GrantsDatabase {
         window.URL.revokeObjectURL(url);
     }
     
-    // Utility functions
     formatCurrency(amount) {
         if (!amount || amount === 0) return 'N/A';
         return new Intl.NumberFormat('en-US', {
@@ -473,13 +290,9 @@ class GrantsDatabase {
         if (!dateStr) return 'N/A';
         try {
             return new Date(dateStr).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric'
+                month: 'short', day: 'numeric', year: 'numeric'
             });
-        } catch {
-            return dateStr;
-        }
+        } catch { return dateStr; }
     }
     
     getStatusClass(status) {
@@ -527,20 +340,6 @@ class GrantsDatabase {
     }
 }
 
-// Initialize the database when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     window.grantsDB = new GrantsDatabase();
 });
-
-// Service Worker registration for offline capability (optional)
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-            .then((registration) => {
-                console.log('SW registered: ', registration);
-            })
-            .catch((registrationError) => {
-                console.log('SW registration failed: ', registrationError);
-            });
-    });
-}
